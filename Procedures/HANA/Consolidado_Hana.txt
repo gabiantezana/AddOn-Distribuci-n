@@ -1,0 +1,204 @@
+﻿
+CREATE PROCEDURE MSS_DIST_ValTrans
+(
+	IN Ruc VARCHAR(200),
+	IN Licencia VARCHAR(300)
+)
+AS
+	_ROWVAL INT;
+	_RetVal VARCHAR(100);
+BEGIN
+	
+	SELECT COUNT(1) INTO _ROWVAL FROM "@MSS_MTRA" WHERE "U_MSS_RUET" = :Ruc AND "U_MSS_NULI" = :Licencia;
+	
+	IF(_ROWVAL > 0)
+	THEN
+		_RetVal := 'Ya existe transportista con licencia ' || :Licencia ||' en esa sociedad.';
+	END IF;
+
+	IF(_RetVal IS NOT NULL)
+	THEN
+		SELECT _RetVal AS "Val" FROM DUMMY;
+	END IF;
+END;
+
+
+
+CREATE PROCEDURE  MSS_DIST_ValVehi 
+(
+	in Ruc VARCHAR(200),
+	in Placa VARCHAR(300)
+)
+AS
+	_ROWVAL INT;
+	_RetVal VARCHAR(100);
+BEGIN
+	
+	_ROWVAL := 0;
+	
+	SELECT COUNT(1) INTO _ROWVAL FROM  "@MSS_MTRA"  WHERE "U_MSS_RUET" = :Ruc;
+	
+	IF(_ROWVAL = 0)
+	THEN
+		  _RetVal := 'No hay empresa de transporte con RUC '||:Ruc||' registrada en el maestro de transportista.';
+	END IF;
+
+	_ROWVAL := 0;
+	
+	SELECT COUNT(*) INTO _ROWVAL FROM "@MSS_MVEH"  WHERE "U_MSS_NUPL" = :Placa;
+	
+	IF(_ROWVAL > 0)
+	THEN
+		  _RetVal := 'Ya existe vehiculo con la placa '||:Placa||' en esa sociedad.';
+	END IF;
+
+	IF(_RetVal IS NOT NULL)
+	THEN
+		SELECT _RetVal AS "Val" FROM DUMMY;
+	END IF;
+
+END
+
+
+
+CREATE PROCEDURE  MSS_DIST_GenReport 
+(
+	IN FInicio DATE,
+	IN FFin DATE,
+	IN tipo char
+)
+AS
+BEGIN
+	IF(:tipo='C') 
+--	--"""01"" - Generado
+--""02"" - Entregado
+--""03"" - Aprobado
+--""04"" - Anulado"
+	THEN 
+		SELECT
+			C."Series" ||'-'||C."DocNum" AS "Nro de Control"
+		,	CASE C."U_MSS_ESTA" 
+				WHEN '01' THEN 'Generado' 
+				WHEN '02' THEN 'Entregado' 
+				WHEN '03' THEN 'Aprobado' 
+				ELSE 'Anulado' 
+			END AS "Estado"
+		,	C."U_MSS_FECD" AS "Fecha de Despacho"
+		,	C."U_MSS_FECR" AS "Fecha de Registro"
+		,	C."U_MSS_RUCT" AS "RUC Transportista"
+		,	C."U_MSS_NOMT" AS "Nombre Transportista"
+		,	C."U_MSS_NUPL" AS "Placa"
+		,	C."U_MSS_VOLV" AS "Volumen Vehículo "
+		,	C."U_MSS_VOLM" AS "Volumen Mercadería "
+		,	C."U_MSS_VOLP" AS "Porcentaje Volumen  "
+		,	C."U_MSS_COSF" AS "Costo Flete  "
+		,	C."U_MSS_COSM" AS "Costo/m3  "
+		,	SUM(D."U_MSS_VALV") AS "Valor Total"
+		,	C."U_MSS_COSP" AS "Porcentaje Costo Transporte Venta"
+		FROM  "@MSS_CGPT"  "C"  
+		INNER JOIN  "@MSS_CGPT_DET"  "D" ON C."DocEntry" = D."DocEntry"
+		WHERE C."U_MSS_FECD" BETWEEN :FInicio AND :FFin
+		GROUP BY C."Series",C."DocNum",C."U_MSS_ESTA",C."U_MSS_FECD", C."U_MSS_FECR",
+				 C."U_MSS_RUCT",C."U_MSS_NOMT" ,C."U_MSS_NUPL",C."U_MSS_VOLV" ,C."U_MSS_VOLM",
+				 C."U_MSS_VOLP",C."U_MSS_COSF",C."U_MSS_COSM",C."U_MSS_COSP"; 
+	ELSE
+			SELECT
+			C."Series"||'-'||C."DocNum" AS "Nro de Control"
+		,	D."U_MSS_ESTA" AS "Estado Control Guia"
+		,	D."U_MSS_SEGR"||'-'||D."U_MSS_COGR" AS "Número Guía de Remisión"
+		,	CASE D."U_MSS_ESTA" 
+				WHEN '01' THEN 'Despachado' 
+				WHEN '02' THEN 'Recibido' 
+				WHEN '03' THEN 'Devuelto' 
+				ELSE 'Anulado' 
+			END AS "Estado Guía de Remisión"		
+		,	GR."TaxDate" AS "Fecha Guía"
+		,	GR."CardCode" AS "Código Cliente"
+		,	GR."CardName" AS "Nombre Cliente"
+		,	D."U_MSS_PTOD" AS "Punto de Despacho"
+		,	D."U_MSS_SEFV" ||'-'||D."U_MSS_COFV" AS "Número de Factura"
+		,	D."U_MSS_VALV" AS "Valor Facturado"
+		,	D."U_MSS_ITEM" AS "Número Items"
+		,	D."U_MSS_VOLM" AS "Volumen (m3)"
+		FROM  "@MSS_CGPT"  "C"  
+		INNER JOIN "@MSS_CGPT_DET"  "D" ON C."DocEntry"=D."DocEntry"
+		INNER JOIN  ODLN  "GR" ON GR."FolioPref"=D."U_MSS_SEGR" AND GR."FolioNum"=D."U_MSS_COGR"
+		WHERE C."U_MSS_FECD" BETWEEN :FInicio AND :FFin;
+	END IF;
+
+END
+
+
+
+
+CREATE PROCEDURE  MSS_DIST_ValAut 
+(
+	IN _User VARCHAR(400)
+)
+AS
+	_RetVal VARCHAR(100);
+	_ROWVAL INT;
+BEGIN
+	 
+	SELECT COUNT(1) INTO _ROWVAL FROM  "@MSS_MAUT"  WHERE "U_MSS_CUSR" = :_User;
+	IF(_ROWVAL > 0)
+	THEN
+		  _RetVal := 'Ya existe asignación de autorización para el usuario '||:_User||'.';
+	END IF;
+
+		IF(_RetVal IS NOT NULL)
+		THEN
+			SELECT _RetVal AS "Val" FROM DUMMY;
+		END IF;
+
+END
+
+
+CREATE PROCEDURE  MSS_DIST_ValidateAut 
+(
+	in	_user nvarchar(300),
+	in	rol nvarchar(300)
+)
+AS
+BEGIN
+	SELECT 
+		CASE :rol 
+			WHEN 'CR' THEN (CASE  WHEN "U_MSS_ATCR" = 'N' THEN 'No tiene autorización de creación' else '' end)  
+			WHEN 'AC' THEN (CASE  WHEN "U_MSS_ATAC" = 'N' THEN 'No tiene autorización de actualizacion' else '' end)  
+			WHEN 'AN' THEN (CASE  WHEN "U_MSS_ATAN" = 'N' THEN 'No tiene autorización de anulacion' else '' end)  
+			WHEN 'EN' THEN (CASE  WHEN "U_MSS_ATEN" = 'N' THEN 'No tiene autorización de marcar entregado' else '' end)  
+			WHEN 'AP' THEN (CASE  WHEN "U_MSS_ATAP" = 'N' THEN 'No tiene autorización de marcar aprobado' else '' end)  
+		END as "Val"
+	FROM  "@MSS_MAUT"  WHERE UPPER("U_MSS_CUSR")=UPPER(:_user)
+	UNION ALL
+	SELECT 
+		'No tiene autorizaciones asignadas' as "Val"
+	FROM   OUSR  "A" 
+	WHERE NOT EXISTS(SELECT 1 FROM  "@MSS_MAUT" "B" WHERE B."U_MSS_CUSR"=A."USER_CODE") AND UPPER(A."USER_CODE") = UPPER(_user) ;
+END
+
+
+CREATE PROCEDURE  MSS_DIST_GetDLNDetails 
+(	
+	IN DocEntry int
+)
+AS
+BEGIN
+	SELECT 
+			T1."FolioPref" "SerFac"
+		,	T1."FolioNum" "CorrFac"
+		,	sum(T1."DocTotal" - T1."VatSum") "Valor"
+		,	sum(T0."Quantity") "Items"
+		,	sum(T1."Volume") "Volum"--va a cambiar
+		, (SELECT STRING_AGG(cast(B0."DocEntry" as nvarchar(20)), ' | ') 
+			              FROM ORDR "B0"
+			              WHERE B0."DocEntry" = T0."BaseEntry"
+			              group BY B0."DocEntry") AS "Ordenes"
+	FROM  DLN1  "T0" JOIN
+	  OINV  "T1" on T1."DocEntry"=T0."TrgetEntry" 
+	WHERE T0."DocEntry" = :DocEntry
+	group by T1."FolioPref",T1."FolioNum", T0."BaseEntry", T0."DocEntry";
+END;
+
+
+

@@ -1,0 +1,97 @@
+CREATE PROCEDURE MSS_OINV_FACTURA_DEUDOR
+(
+	in DocEntry int
+)
+AS
+--CALL "MSS_OINV_FACTURA_DEUDOR" ('112');
+
+baseimponible varchar(20);
+moneda varchar(5);
+
+BEGIN
+
+
+SELECT 
+TO_VARCHAR(TO_DECIMAL((CASE WHEN T0."DocCur" = 'US$' THEN (SELECT SUM(T1."TotalFrgn") FROM INV1 T1 WHERE T0."DocEntry"=T1."DocEntry")
+                              ELSE (SELECT SUM(T1."LineTotal") FROM INV1 T1 WHERE T0."DocEntry"=T1."DocEntry" )END + 
+
+CASE WHEN T0."DocCur" = 'US$' THEN (IFNULL((SELECT SUM(TX."TotalFrgn") FROM INV2 TX WHERE TX."DocEntry"=T0."DocEntry"),0))
+                              ELSE (IFNULL((SELECT SUM(TX."LineTotal") FROM INV2 TX WHERE TX."DocEntry"=T0."DocEntry"),0)) END),10,2))
+INTO baseimponible                              
+FROM OINV T0 
+WHERE t0."DocEntry"=:DocEntry;
+
+
+SELECT TO_VARCHAR(CASE WHEN T0."DocCur" = 'US$' THEN '$' WHEN T0."DocCur" = 'S/' THEN 'S/' END)
+INTO moneda
+FROM OINV T0 
+WHERE t0."DocEntry"=:DocEntry;
+
+
+SELECT 
+T0."DocTotal",
+(IFNULL(T0."FolioPref",T8."FolioPref"))	AS "Folio",
+RIGHT((0000000 ||IFNULL(T0."FolioNum",(select (MAX(OINV."FolioNum") + 1) 
+					from OINV INNER JOIN NNM1  ON OINV."Series" = NNM1."Series"
+WHERE OINV."Series" = T0."Series"))),7)	AS "Numero",
+T0."DocDate" 	AS "F_Emision",
+T0."CardName" 	AS "Cliente",
+T6."LicTradNum"	AS "RUC",
+
+(SELECT STRING_AGG(AA."CORRELATIVOGUIA",' / ')
+FROM (SELECT DISTINCT(D."FolioPref" ||'-'|| D."FolioNum") AS "CORRELATIVOGUIA"
+FROM OINV A 
+INNER JOIN INV1 B ON B."DocEntry"=A."DocEntry"
+LEFT  JOIN DLN1 C ON C."DocEntry"= B."BaseEntry" and C."LineNum"= B."BaseLine"
+LEFT  JOIN ODLN D ON D."DocEntry" = C."DocEntry"
+WHERE A."DocEntry"= T0."DocEntry") AS "AA" 
+) AS "G_Remisión",
+
+IFNULL(T5."NumAtCard",T0."NumAtCard")	 AS "O_Venta",
+T0."Address" 	AS "Direccion",
+case when  T1."TaxOnly"='Y' then  '' else (CASE WHEN T7."GroupNum"=28 THEN 'CONTADO' ELSE T7."PymntGroup" END) end as   "Condiciones",
+CASE WHEN T0."DocType"='I' then T1."Quantity" else T1."U_MSS_CANTIDAD" end  AS "Cantidad",
+T1."UomCode"	AS "U_MED",
+T1."Dscription" AS "Descripcion",
+CASE WHEN T0."DocCur" = 'US$' THEN ' DOLARES AMERICANOS' 
+	 WHEN T0."DocCur" = 'S/'  THEN ' SOLES' END AS "Moneda",
+CASE WHEN T0."DocCur" = 'US$' THEN '$'
+	 WHEN T0."DocCur" = 'S/' THEN 'S/' 	   END AS "Currency",
+T1."PriceBefDi"+IFNULL(T1."U_MSS_PrecioUnitFlete",0)	AS "Valor_Unit",
+
+CASE WHEN T1."U_MSS_TIPOVENT"='1'THEN 
+    (CASE WHEN T0."DocCur" = 'US$' THEN T1."TotalFrgn"+IFNULL((SELECT TX."TotalFrgn" FROM INV2 TX WHERE TX."DocEntry"=T0."DocEntry" AND TX."LineNum"=T1."LineNum"),0)
+     ELSE T1."LineTotal"+IFNULL((SELECT TX."LineTotal" FROM INV2 TX WHERE TX."DocEntry"=T0."DocEntry"  AND TX."LineNum"=T1."LineNum"),0)			   END) 
+ELSE 0.00 END AS "Valor_Venta",
+
+CASE WHEN T1."U_MSS_TIPOVENT"='1'THEN (CASE WHEN T0."DocCur" = 'US$' THEN T0."VatSumFC"
+	 ELSE T0."VatSum" 					   END) ELSE 0.00 END AS "IGV",	
+T1."VatPrcnt" 			AS "%IGV",	  
+CASE WHEN T1."U_MSS_TIPOVENT"='1'THEN (CASE WHEN T0."DocCur" = 'US$' THEN T0."DocTotalFC"
+	 ELSE T0."DocTotal" 				   END) ELSE 0.00 END AS "Total",
+' '			AS "NRO_Banco",
+' '			AS "Banco",
+CASE T1."U_MSS_TIPOVENT" 
+						 WHEN '6' THEN '"SIN VALOR COMERCIAL, ENTREGA A TITULO GRATUITO" VALOR REFERENCIAL = '|| :moneda ||' '|| :baseimponible 
+						 WHEN '5' THEN '"SIN VALOR COMERCIAL, ENTREGA A TITULO GRATUITO" VALOR REFERENCIAL = '|| :moneda ||' '|| :baseimponible 
+						 WHEN '4' THEN '"SIN VALOR COMERCIAL, ENTREGA A TITULO GRATUITO" VALOR REFERENCIAL = '|| :moneda ||' '|| :baseimponible 
+						 WHEN '3' THEN 'SIN VALOR COMERCIAL, ENTREGA A TITULO GRATUITO'
+                         WHEN '2' THEN 'SIN VALOR COMERCIAL, BONIFICACIÓN'
+                         WHEN '1' THEN (CASE WHEN (T0."DocTotal"> T9."U_MSS_MMIN") THEN ('Operación sujeta al SPOT '||TO_VARCHAR(TO_DECIMAL(T9."U_MSS_PORC", 4, 1))||'% Cta. Cte. Bco. Nación 000058053945 Tipo de operación '|| T1."U_tipoOpT12" ||' Tipo de bien '|| TO_VARCHAR(T9."Code"))
+                                        ELSE '' END) 
+END AS "TipoVenta"
+
+FROM OINV T0 
+INNER JOIN INV1 T1 ON T1."DocEntry"=T0."DocEntry"
+LEFT  JOIN DLN1 T2 ON T2."DocEntry"= T1."BaseEntry" and T2."LineNum"= T1."BaseLine"
+LEFT  JOIN ODLN T3 ON T3."DocEntry" = T2."DocEntry"
+LEFT  JOIN RDR1 T4 ON T4."DocEntry"= T2."BaseEntry" and T4."LineNum"= T2."BaseLine"
+LEFT  JOIN ORDR T5 ON T5."DocEntry" = T4."DocEntry"
+LEFT  JOIN OCRD T6 ON T6."CardCode"=T0."CardCode"
+LEFT  JOIN OCTG T7 ON T7."GroupNum"=T0."GroupNum"
+LEFT  JOIN NNM1 T8 ON T0."Series" = T8."Series"
+LEFT  JOIN "@MSS_GDETR" T9 ON T1."U_MSS_GDETRAC" = T9."Code" 
+WHERE  T0."DocEntry" = :DocEntry
+ORDER BY T1."LineNum";
+
+END;

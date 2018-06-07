@@ -1,0 +1,15 @@
+CREATE PROCEDURE MSS_DIST_Anular
+(
+	IN entry nvarchar(200)
+)
+AS
+  valor nvarchar(200);
+BEGIN
+DECLARE 
+	UPDATE "@MSS_CGPT" SET "U_MSS_ESTA"='04' WHERE "DocEntry"=:entry;
+	UPDATE "@MSS_CGPT_DET" SET "U_MSS_ESTA"='04' WHERE "DocEntry"=:entry;
+	
+	SELECT "Series" ||'-'||"DocNum" into :valor FROM "@MSS_CGPT" WHERE "DocEntry"=:entry;
+	UPDATE "ODLN" SET "U_MSS_ACGT"='Y', "U_MSS_NCGT"=NULL WHERE "U_MSS_NCGT"= :valor;
+	
+END
