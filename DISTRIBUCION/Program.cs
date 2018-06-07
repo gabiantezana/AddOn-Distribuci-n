@@ -22,7 +22,7 @@ namespace MSS
                 Application.Run();
             }
             else
-                Application.Exit();
+                Application.Exit(); 
         }
     }
 }
