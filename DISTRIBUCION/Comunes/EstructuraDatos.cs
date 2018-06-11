@@ -21,24 +21,25 @@ namespace MSS.Comunes
 
         public EstructuraDatos()
         {
-            try
+            //try
+            //{
+            if (ValidaVersion(m_sNombreAddon, m_sVersion))
             {
-                if (ValidaVersion(m_sNombreAddon, m_sVersion))
-                {
-                    RegistrarVersion(m_sNombreAddon, m_sVersion);
-                    CrearTablasADDON();
-                    CrearCamposADDON();
-                    CrearObjetosADDON();
-                    //CrearAutorizacionesADDON();
-                    //PrecargarDatosADDON();
-                }
+                RegistrarVersion(m_sNombreAddon, m_sVersion);
+                CrearTablasADDON();
+                CrearCamposADDON();
+                CrearObjetosADDON();
+                //CrearAutorizacionesADDON();
+                //PrecargarDatosADDON();
             }
-            catch (Exception ex)
-            {
-                Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon +
-                    " Error: EstructuraDatos.cs > EstructuraDatos():" + ex.Message,
-                    SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
-            }
+            /*
+        }
+        catch (Exception ex)
+        {
+            Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon +
+                " Error: EstructuraDatos.cs > EstructuraDatos():" + ex.Message,
+                SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
+        }*/
         }
 
         #endregion
@@ -169,32 +170,32 @@ namespace MSS.Comunes
             int i_Error = 0;
             string s_Error = "";
 
-            try
+            //try
+            //{
+            oUserTable = Conexion.Conexion_SBO.m_oCompany.UserTables.Item(s_TableName);
+            if (!oUserTable.GetByKey(s_CodeValue))
             {
-                oUserTable = Conexion.Conexion_SBO.m_oCompany.UserTables.Item(s_TableName);
-                if (!oUserTable.GetByKey(s_CodeValue))
-                {
-                    oUserTable.Code = s_CodeValue;
-                    oUserTable.Name = s_NameValue;
-                    if (i_Time != -1)
-                        oUserTable.UserFields.Fields.Item("U_MSS_TIME").Value = i_Time;
-                    i_Result = oUserTable.Add();
+                oUserTable.Code = s_CodeValue;
+                oUserTable.Name = s_NameValue;
+                if (i_Time != -1)
+                    oUserTable.UserFields.Fields.Item("U_MSS_TIME").Value = i_Time;
+                i_Result = oUserTable.Add();
 
-                    if (i_Result != 0)
-                    {
-                        Conexion.Conexion_SBO.m_oCompany.GetLastError(out i_Error, out s_Error);
-                        Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon +
-                            " Error: EstructuraDatos.cs > CargarValoresUDT(): " + i_Error.ToString() + s_Error,
-                            SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
-                    }
+                if (i_Result != 0)
+                {
+                    Conexion.Conexion_SBO.m_oCompany.GetLastError(out i_Error, out s_Error);
+                    Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon +
+                        " Error: EstructuraDatos.cs > CargarValoresUDT(): " + i_Error.ToString() + s_Error,
+                        SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
                 }
             }
+            /*}
             catch (Exception ex)
             {
                 Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon +
                     " Error: EstructuraDatos.cs > CargarValoresUDT(): " + ex.Message,
                     SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
-            }
+            }*/
         }
 
         #endregion
@@ -207,49 +208,49 @@ namespace MSS.Comunes
             SAPbobsCOM.UserTable oUT = null;
             SAPbobsCOM.Recordset oRS = null;
             string NombreTabla = "";
+            //try
+            //{
+            NombreTabla = NombreAddon.ToUpper();
             try
             {
-                NombreTabla = NombreAddon.ToUpper();
-                try
-                {
-                    oUT = Conexion.Conexion_SBO.m_oCompany.UserTables.Item(NombreTabla);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.ToLower().Contains("invalid field name")) oUT = null;
-                    else throw ex;
-                }
+                oUT = Conexion.Conexion_SBO.m_oCompany.UserTables.Item(NombreTabla);
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.ToLower().Contains("invalid field name")) oUT = null;
+                else throw ex;
+            }
 
-                if (oUT == null)
+            if (oUT == null)
+            {
+                CreaTablaMD(NombreTabla, "", SAPbobsCOM.BoUTBTableType.bott_NoObject);
+                bRetorno = true;
+            }
+            else
+            {
+                oRS = (SAPbobsCOM.Recordset)Conexion.Conexion_SBO.m_oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+                oRS.DoQuery(Consultas.consultaTablaConfiguracion(Conexion.Conexion_SBO.m_oCompany.DbServerType, NombreAddon, Version, true));
+                if (oRS.RecordCount == 0)
                 {
-                    CreaTablaMD(NombreTabla, "", SAPbobsCOM.BoUTBTableType.bott_NoObject);
                     bRetorno = true;
+                    Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Actualizará la esturctura de datos",
+                        SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Warning);
                 }
                 else
                 {
-                    oRS = (SAPbobsCOM.Recordset)Conexion.Conexion_SBO.m_oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
-                    oRS.DoQuery(Consultas.consultaTablaConfiguracion(Conexion.Conexion_SBO.m_oCompany.DbServerType, NombreAddon, Version, true));
-                    if (oRS.RecordCount == 0)
+                    if (int.Parse(Version.Replace(".", "").ToString()) > int.Parse(oRS.Fields.Item("code").Value.ToString().Replace(".", "")))
                     {
                         bRetorno = true;
                         Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Actualizará la esturctura de datos",
-                            SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Warning);
+                        SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Warning);
                     }
-                    else
-                    {
-                        if (int.Parse(Version.Replace(".", "").ToString()) > int.Parse(oRS.Fields.Item("code").Value.ToString().Replace(".", "")))
-                        {
-                            bRetorno = true;
-                            Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Actualizará la esturctura de datos",
-                            SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Warning);
-                        }
 
-                        if (int.Parse(Version.Replace(".", "").ToString()) < int.Parse(oRS.Fields.Item("code").Value.ToString().Replace(".", "")))
-                            Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Detectó una version superior para este Addon",
-                            SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
-                    }
+                    if (int.Parse(Version.Replace(".", "").ToString()) < int.Parse(oRS.Fields.Item("code").Value.ToString().Replace(".", "")))
+                        Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Detectó una version superior para este Addon",
+                        SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
                 }
             }
+            /*}
             catch (Exception ex)
             {
                 Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon +
@@ -262,27 +263,27 @@ namespace MSS.Comunes
                 LiberarObjetoGenerico(oRS);
                 oRS = null;
                 oUT = null;
-            }
+            }*/
             return bRetorno;
         }
         private void RegistrarVersion(string NombreAddon, string Version)
         {
             SAPbobsCOM.UserTable oUT = null;
             string NombreTabla = "";
-            try
-            {
-                NombreTabla = NombreAddon.ToUpper();
-                oUT = Conexion.Conexion_SBO.m_oCompany.UserTables.Item(NombreTabla);
-                oUT.Code = Version;
-                oUT.Name = NombreAddon + " V-" + Version;
-                m_iErrCode = oUT.Add();
-                if (m_iErrCode == 0)
-                    Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Se ingreso un nuevo registro a la BD ",
-                        SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Success);
-                else
-                    Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Error ingresar el registro en la tabla: "
-                        + NombreTabla, SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
-            }
+            //try
+            //{
+            NombreTabla = NombreAddon.ToUpper();
+            oUT = Conexion.Conexion_SBO.m_oCompany.UserTables.Item(NombreTabla);
+            oUT.Code = Version;
+            oUT.Name = NombreAddon + " V-" + Version;
+            m_iErrCode = oUT.Add();
+            if (m_iErrCode == 0)
+                Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Se ingreso un nuevo registro a la BD ",
+                    SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Success);
+            else
+                Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Error ingresar el registro en la tabla: "
+                    + NombreTabla, SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
+            /*}
             catch (Exception ex)
             {
                 Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon +
@@ -293,7 +294,7 @@ namespace MSS.Comunes
             {
                 LiberarObjetoGenerico(oUT);
                 oUT = null;
-            }
+            }*/
         }
         private void RegistrarAutorizaciones(string s_PermissionID, string s_PermissionName, PermissionType oPermissionType, string s_FatherID, string s_FormTypeEx)
         {
@@ -301,65 +302,65 @@ namespace MSS.Comunes
             int i_Result = 0;
             string s_Result = "";
 
-            try
+            //try
+            //{
+            oUserPermissionTree = (SAPbobsCOM.UserPermissionTree)Conexion.Conexion_SBO.m_oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oUserPermissionTree);
+            if (!oUserPermissionTree.GetByKey(s_PermissionID))
             {
-                oUserPermissionTree = (SAPbobsCOM.UserPermissionTree)Conexion.Conexion_SBO.m_oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oUserPermissionTree);
-                if (!oUserPermissionTree.GetByKey(s_PermissionID))
+                oUserPermissionTree.PermissionID = s_PermissionID;
+                oUserPermissionTree.Name = s_PermissionName;
+                oUserPermissionTree.Options = SAPbobsCOM.BoUPTOptions.bou_FullReadNone;
+                if (oPermissionType == PermissionType.pt_child)
                 {
-                    oUserPermissionTree.PermissionID = s_PermissionID;
-                    oUserPermissionTree.Name = s_PermissionName;
-                    oUserPermissionTree.Options = SAPbobsCOM.BoUPTOptions.bou_FullReadNone;
-                    if (oPermissionType == PermissionType.pt_child)
-                    {
-                        oUserPermissionTree.UserPermissionForms.FormType = s_FormTypeEx;
-                        oUserPermissionTree.ParentID = s_FatherID;
-                    }
-                    i_Result = oUserPermissionTree.Add();
+                    oUserPermissionTree.UserPermissionForms.FormType = s_FormTypeEx;
+                    oUserPermissionTree.ParentID = s_FatherID;
+                }
+                i_Result = oUserPermissionTree.Add();
 
-                    if (i_Result != 0)
-                    {
-                        Conexion.Conexion_SBO.m_oCompany.GetLastError(out i_Result, out s_Result);
-                        Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Error al crear la autorización de usuario: " + s_Result,
-                            SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
-                    }
+                if (i_Result != 0)
+                {
+                    Conexion.Conexion_SBO.m_oCompany.GetLastError(out i_Result, out s_Result);
+                    Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Error al crear la autorización de usuario: " + s_Result,
+                        SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
                 }
             }
+            /*}
             catch (Exception ex)
             {
                 Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Error: EstructuraDatos.cs > RegistrarAutorizaciones():"
                     + ex.Message, SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
-            }
+            }*/
         }
         private bool CreaTablaMD(string NombTabla, string DescTabla, SAPbobsCOM.BoUTBTableType tipoTabla)
         {
             SAPbobsCOM.UserTablesMD oUserTablesMD = null;
-            try
+            //try
+            //{
+            oUserTablesMD = null;
+            oUserTablesMD = (SAPbobsCOM.UserTablesMD)Conexion.Conexion_SBO.m_oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oUserTables);
+            if (!oUserTablesMD.GetByKey(NombTabla))
             {
-                oUserTablesMD = null;
-                oUserTablesMD = (SAPbobsCOM.UserTablesMD)Conexion.Conexion_SBO.m_oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oUserTables);
-                if (!oUserTablesMD.GetByKey(NombTabla))
-                {
-                    oUserTablesMD.TableName = NombTabla;
-                    oUserTablesMD.TableDescription = DescTabla;
-                    oUserTablesMD.TableType = tipoTabla;
+                oUserTablesMD.TableName = NombTabla;
+                oUserTablesMD.TableDescription = DescTabla;
+                oUserTablesMD.TableType = tipoTabla;
 
-                    m_iErrCode = oUserTablesMD.Add();
-                    if (m_iErrCode != 0)
-                    {
-                        Conexion.Conexion_SBO.m_oCompany.GetLastError(out m_iErrCode, out m_sErrMsg);
-                        Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Error al crear  tabla: " + NombTabla,
-                            SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
-                        return false;
-                    }
-                    else
-                        Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Se ha creado la tabla: " + NombTabla,
-                            SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Success);
-                    LiberarObjetoGenerico(oUserTablesMD);
-                    oUserTablesMD = null;
-                    return true;
+                m_iErrCode = oUserTablesMD.Add();
+                if (m_iErrCode != 0)
+                {
+                    Conexion.Conexion_SBO.m_oCompany.GetLastError(out m_iErrCode, out m_sErrMsg);
+                    Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Error al crear  tabla: " + NombTabla,
+                        SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
+                    return false;
                 }
-                return false;
+                else
+                    Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Se ha creado la tabla: " + NombTabla,
+                        SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Success);
+                LiberarObjetoGenerico(oUserTablesMD);
+                oUserTablesMD = null;
+                return true;
             }
+            return false;
+            /*}
             catch (Exception ex)
             {
                 Conexion.Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon +
@@ -371,58 +372,60 @@ namespace MSS.Comunes
             {
                 LiberarObjetoGenerico(oUserTablesMD);
                 oUserTablesMD = null;
-            }
+            }*/
         }
         private void CreaCampoMD(string NombreTabla, string NombreCampo, string DescCampo, SAPbobsCOM.BoFieldTypes TipoCampo, SAPbobsCOM.BoFldSubTypes SubTipo, int Tamano, SAPbobsCOM.BoYesNoEnum Obligatorio, string[] validValues, string[] validDescription, string valorPorDef, string tablaVinculada)
         {
+
             SAPbobsCOM.UserFieldsMD oUserFieldsMD = null;
-            try
+            //try
+            //{
+            if (NombreTabla == null) NombreTabla = "";
+            if (NombreCampo == null) NombreCampo = "";
+            if (Tamano == 0) Tamano = 10;
+            if (validValues == null) validValues = new string[0];
+            if (validDescription == null) validDescription = new string[0];
+            if (valorPorDef == null) valorPorDef = "";
+            if (tablaVinculada == null) tablaVinculada = "";
+
+            oUserFieldsMD = (SAPbobsCOM.UserFieldsMD)Conexion.Conexion_SBO.m_oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oUserFields);
+            oUserFieldsMD.TableName = NombreTabla;
+            oUserFieldsMD.Name = NombreCampo;
+            oUserFieldsMD.Description = DescCampo;
+            oUserFieldsMD.Type = TipoCampo;
+            if (TipoCampo != SAPbobsCOM.BoFieldTypes.db_Date) oUserFieldsMD.EditSize = Tamano;
+            oUserFieldsMD.SubType = SubTipo;
+
+            if (tablaVinculada != "") oUserFieldsMD.LinkedTable = tablaVinculada;
+            else
             {
-                if (NombreTabla == null) NombreTabla = "";
-                if (NombreCampo == null) NombreCampo = "";
-                if (Tamano == 0) Tamano = 10;
-                if (validValues == null) validValues = new string[0];
-                if (validDescription == null) validDescription = new string[0];
-                if (valorPorDef == null) valorPorDef = "";
-                if (tablaVinculada == null) tablaVinculada = "";
-
-                oUserFieldsMD = (SAPbobsCOM.UserFieldsMD)Conexion.Conexion_SBO.m_oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oUserFields);
-                oUserFieldsMD.TableName = NombreTabla;
-                oUserFieldsMD.Name = NombreCampo;
-                oUserFieldsMD.Description = DescCampo;
-                oUserFieldsMD.Type = TipoCampo;
-                if (TipoCampo != SAPbobsCOM.BoFieldTypes.db_Date) oUserFieldsMD.EditSize = Tamano;
-                oUserFieldsMD.SubType = SubTipo;
-
-                if (tablaVinculada != "") oUserFieldsMD.LinkedTable = tablaVinculada;
-                else
+                if (validValues.Length > 0)
                 {
-                    if (validValues.Length > 0)
+                    for (int i = 0; i <= (validValues.Length - 1); i++)
                     {
-                        for (int i = 0; i <= (validValues.Length - 1); i++)
-                        {
-                            oUserFieldsMD.ValidValues.Value = validValues[i];
-                            if (validDescription.Length > 0) oUserFieldsMD.ValidValues.Description = validDescription[i];
-                            else oUserFieldsMD.ValidValues.Description = validValues[i];
-                            oUserFieldsMD.ValidValues.Add();
-                        }
+                        oUserFieldsMD.ValidValues.Value = validValues[i];
+                        if (validDescription.Length > 0) oUserFieldsMD.ValidValues.Description = validDescription[i];
+                        else oUserFieldsMD.ValidValues.Description = validValues[i];
+                        oUserFieldsMD.ValidValues.Add();
                     }
-                    oUserFieldsMD.Mandatory = Obligatorio;
-                    if (valorPorDef != "") oUserFieldsMD.DefaultValue = valorPorDef;
                 }
-
-                m_iErrCode = oUserFieldsMD.Add();
-                if (m_iErrCode != 0)
-                {
-                    Conexion_SBO.m_oCompany.GetLastError(out m_iErrCode, out m_sErrMsg);
-                    if ((m_iErrCode != -5002) && (m_iErrCode != -2035))
-                        Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Error al crear campo de usuario: " + NombreCampo
-                            + "en la tabla: " + NombreTabla + " Error: " + m_sErrMsg, SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
-                }
-                else
-                    Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Se ha creado el campo de usuario: " + NombreCampo
-                            + " en la tabla: " + NombreTabla, SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Success);
+                oUserFieldsMD.Mandatory = Obligatorio;
+                if (valorPorDef != "") oUserFieldsMD.DefaultValue = valorPorDef;
             }
+
+            m_iErrCode = oUserFieldsMD.Add();
+            if (m_iErrCode != 0)
+            {
+                Conexion_SBO.m_oCompany.GetLastError(out m_iErrCode, out m_sErrMsg);
+                if ((m_iErrCode != -5002) && (m_iErrCode != -2035))
+                    Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Error al crear campo de usuario: " + NombreCampo
+                        + "en la tabla: " + NombreTabla + " Error: " + m_sErrMsg, SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
+            }
+            else
+                Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon + " Se ha creado el campo de usuario: " + NombreCampo
+                        + " en la tabla: " + NombreTabla, SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Success);
+
+            /*
             catch (Exception ex)
             {
                 Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon +
@@ -433,7 +436,7 @@ namespace MSS.Comunes
             {
                 LiberarObjetoGenerico(oUserFieldsMD);
                 oUserFieldsMD = null;
-            }
+            }*/
         }
         private bool CreaUDOMD(string sCode, string sName, string sTableName, string[] sFindColumns, string[] sChildTables, SAPbobsCOM.BoYesNoEnum eCanCancel, SAPbobsCOM.BoYesNoEnum eCanClose,
             SAPbobsCOM.BoYesNoEnum eCanDelete, SAPbobsCOM.BoYesNoEnum eCanCreateDefaultForm, string[] sFormColumns, SAPbobsCOM.BoYesNoEnum eCanFind, SAPbobsCOM.BoYesNoEnum eCanLog, SAPbobsCOM.BoUDOObjType eObjectType,
@@ -443,80 +446,80 @@ namespace MSS.Comunes
             int i_Result = 0;
             string s_Result = "";
 
-            try
+            //try
+            //{
+            oUserObjectMD = (SAPbobsCOM.UserObjectsMD)Conexion_SBO.m_oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oUserObjectsMD);
+
+            if (!oUserObjectMD.GetByKey(sCode))
             {
-                oUserObjectMD = (SAPbobsCOM.UserObjectsMD)Conexion_SBO.m_oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oUserObjectsMD);
+                oUserObjectMD.Code = sCode;
+                oUserObjectMD.Name = sName;
+                oUserObjectMD.ObjectType = eObjectType;
+                oUserObjectMD.TableName = sTableName;
+                oUserObjectMD.CanCancel = eCanCancel;
+                oUserObjectMD.CanClose = eCanClose;
+                oUserObjectMD.CanDelete = eCanDelete;
+                oUserObjectMD.CanCreateDefaultForm = eCanCreateDefaultForm;
+                oUserObjectMD.EnableEnhancedForm = eEnableEnhancedForm;
+                oUserObjectMD.RebuildEnhancedForm = eRebuildEnhancedForm;
+                oUserObjectMD.CanFind = eCanFind;
+                oUserObjectMD.CanLog = eCanLog;
+                oUserObjectMD.ManageSeries = eManageSeries;
 
-                if (!oUserObjectMD.GetByKey(sCode))
+                if (sFindColumns != null)
                 {
-                    oUserObjectMD.Code = sCode;
-                    oUserObjectMD.Name = sName;
-                    oUserObjectMD.ObjectType = eObjectType;
-                    oUserObjectMD.TableName = sTableName;
-                    oUserObjectMD.CanCancel = eCanCancel;
-                    oUserObjectMD.CanClose = eCanClose;
-                    oUserObjectMD.CanDelete = eCanDelete;
-                    oUserObjectMD.CanCreateDefaultForm = eCanCreateDefaultForm;
-                    oUserObjectMD.EnableEnhancedForm = eEnableEnhancedForm;
-                    oUserObjectMD.RebuildEnhancedForm = eRebuildEnhancedForm;
-                    oUserObjectMD.CanFind = eCanFind;
-                    oUserObjectMD.CanLog = eCanLog;
-                    oUserObjectMD.ManageSeries = eManageSeries;
-
-                    if (sFindColumns != null)
+                    for (int i = 0; i < sFindColumns.Length; i++)
                     {
-                        for (int i = 0; i < sFindColumns.Length; i++)
-                        {
-                            oUserObjectMD.FindColumns.ColumnAlias = sFindColumns[i];
-                            oUserObjectMD.FindColumns.Add();
-                        }
+                        oUserObjectMD.FindColumns.ColumnAlias = sFindColumns[i];
+                        oUserObjectMD.FindColumns.Add();
                     }
+                }
+                if (sChildTables != null)
+                {
+                    for (int i = 0; i < sChildTables.Length; i++)
+                    {
+                        oUserObjectMD.ChildTables.TableName = sChildTables[i];
+                        oUserObjectMD.ChildTables.Add();
+                    }
+                }
+                if (sFormColumns != null)
+                {
+                    oUserObjectMD.UseUniqueFormType = SAPbobsCOM.BoYesNoEnum.tYES;
+
+                    for (int i = 0; i < sFormColumns.Length; i++)
+                    {
+                        oUserObjectMD.FormColumns.FormColumnAlias = sFormColumns[i];
+                        oUserObjectMD.FormColumns.Add();
+                    }
+                }
+                if (sChildFormColumns != null)
+                {
                     if (sChildTables != null)
                     {
-                        for (int i = 0; i < sChildTables.Length; i++)
+                        for (int i = 0; i < sChildFormColumns.Length; i++)
                         {
-                            oUserObjectMD.ChildTables.TableName = sChildTables[i];
-                            oUserObjectMD.ChildTables.Add();
-                        }
-                    }
-                    if (sFormColumns != null)
-                    {
-                        oUserObjectMD.UseUniqueFormType = SAPbobsCOM.BoYesNoEnum.tYES;
-
-                        for (int i = 0; i < sFormColumns.Length; i++)
-                        {
-                            oUserObjectMD.FormColumns.FormColumnAlias = sFormColumns[i];
+                            oUserObjectMD.FormColumns.SonNumber = 1;
+                            oUserObjectMD.FormColumns.FormColumnAlias = sChildFormColumns[i];
                             oUserObjectMD.FormColumns.Add();
                         }
-                    }
-                    if (sChildFormColumns != null)
-                    {
-                        if (sChildTables != null)
-                        {
-                            for (int i = 0; i < sChildFormColumns.Length; i++)
-                            {
-                                oUserObjectMD.FormColumns.SonNumber = 1;
-                                oUserObjectMD.FormColumns.FormColumnAlias = sChildFormColumns[i];
-                                oUserObjectMD.FormColumns.Add();
-                            }
 
-                        }
-                    }
-
-                    i_Result = oUserObjectMD.Add();
-
-                    if (i_Result != 0)
-                    {
-                        Conexion_SBO.m_oCompany.GetLastError(out i_Result, out s_Result);
-                        Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon +
-                            " Error: EstructuraDatos.cs > CreaUDOMD(): " + s_Result + ", creando el UDO " + sCode + ".",
-                            SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
-                        return false;
                     }
                 }
 
-                return true;
+                i_Result = oUserObjectMD.Add();
+
+                if (i_Result != 0)
+                {
+                    Conexion_SBO.m_oCompany.GetLastError(out i_Result, out s_Result);
+                    Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon +
+                        " Error: EstructuraDatos.cs > CreaUDOMD(): " + s_Result + ", creando el UDO " + sCode + ".",
+                        SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
+                    return false;
+                }
             }
+
+            return true;
+            /*}
             catch (Exception ex)
             {
                 Conexion_SBO.m_SBO_Appl.StatusBar.SetText(Properties.Resources.NombreAddon +
@@ -527,176 +530,176 @@ namespace MSS.Comunes
             finally
             {
                 LiberarObjetoGenerico(oUserObjectMD);
-            }
+            }*/
         }
         private string[] getDetailField(bo_ColumnType m_bo_ColumnType, bo_FieldName m_bo_FieldName)
         {
             string[] m_Detail = null;
 
-            try
+            //try
+            //{
+            switch (m_bo_ColumnType)
             {
-                switch (m_bo_ColumnType)
-                {
-                    case bo_ColumnType.ct_Value:
-                        switch (m_bo_FieldName)
-                        {
-                            case bo_FieldName.fn_MSS_ATCR:
-                                m_Detail = new string[] { "Y", "N" };
-                                break;
-                            case bo_FieldName.fn_MSS_ATAC:
-                                m_Detail = new string[] { "Y", "N" };
-                                break;
-                            case bo_FieldName.fn_MSS_ATAN:
-                                m_Detail = new string[] { "Y", "N" };
-                                break;
-                            case bo_FieldName.fn_MSS_ATEN:
-                                m_Detail = new string[] { "Y", "N" };
-                                break;
-                            case bo_FieldName.fn_MSS_ATAP:
-                                m_Detail = new string[] { "Y", "N" };
-                                break;
-                            case bo_FieldName.fn_MSS_ACGT:
-                                m_Detail = new string[] { "N", "Y" };
-                                break;
-                            case bo_FieldName.fn_MSS_ESTAC:
-                                m_Detail = new string[] { "01", "02", "03", "04" };
-                                break;
-                            case bo_FieldName.fn_MSS_ESTAD:
-                                m_Detail = new string[] { "01", "02", "03", "04" };
-                                break;
-                        }
-                        break;
-                    case bo_ColumnType.ct_Descript:
-                        switch (m_bo_FieldName)
-                        {
-                            case bo_FieldName.fn_MSS_ATCR:
-                                m_Detail = new string[] { "SI", "NO" };
-                                break;
-                            case bo_FieldName.fn_MSS_ATAC:
-                                m_Detail = new string[] { "SI", "NO" };
-                                break;
-                            case bo_FieldName.fn_MSS_ATAN:
-                                m_Detail = new string[] { "SI", "NO" };
-                                break;
-                            case bo_FieldName.fn_MSS_ATEN:
-                                m_Detail = new string[] { "SI", "NO" };
-                                break;
-                            case bo_FieldName.fn_MSS_ATAP:
-                                m_Detail = new string[] { "SI", "NO" };
-                                break;
-                            case bo_FieldName.fn_MSS_ACGT:
-                                m_Detail = new string[] { "NO", "SI" };
-                                break;
-                            case bo_FieldName.fn_MSS_ESTAC:
-                                m_Detail = new string[] { "Generado", "Entregado", "Aprobado", "Anulado" };
-                                break;
-                            case bo_FieldName.fn_MSS_ESTAD:
-                                m_Detail = new string[] { "Despachado", "Recibido", "Devuelto", "Anulado" };
-                                break;
-                        }
-                        break;
-                }
-                return m_Detail;
+                case bo_ColumnType.ct_Value:
+                    switch (m_bo_FieldName)
+                    {
+                        case bo_FieldName.fn_MSS_ATCR:
+                            m_Detail = new string[] { "Y", "N" };
+                            break;
+                        case bo_FieldName.fn_MSS_ATAC:
+                            m_Detail = new string[] { "Y", "N" };
+                            break;
+                        case bo_FieldName.fn_MSS_ATAN:
+                            m_Detail = new string[] { "Y", "N" };
+                            break;
+                        case bo_FieldName.fn_MSS_ATEN:
+                            m_Detail = new string[] { "Y", "N" };
+                            break;
+                        case bo_FieldName.fn_MSS_ATAP:
+                            m_Detail = new string[] { "Y", "N" };
+                            break;
+                        case bo_FieldName.fn_MSS_ACGT:
+                            m_Detail = new string[] { "N", "Y" };
+                            break;
+                        case bo_FieldName.fn_MSS_ESTAC:
+                            m_Detail = new string[] { "01", "02", "03", "04" };
+                            break;
+                        case bo_FieldName.fn_MSS_ESTAD:
+                            m_Detail = new string[] { "01", "02", "03", "04" };
+                            break;
+                    }
+                    break;
+                case bo_ColumnType.ct_Descript:
+                    switch (m_bo_FieldName)
+                    {
+                        case bo_FieldName.fn_MSS_ATCR:
+                            m_Detail = new string[] { "SI", "NO" };
+                            break;
+                        case bo_FieldName.fn_MSS_ATAC:
+                            m_Detail = new string[] { "SI", "NO" };
+                            break;
+                        case bo_FieldName.fn_MSS_ATAN:
+                            m_Detail = new string[] { "SI", "NO" };
+                            break;
+                        case bo_FieldName.fn_MSS_ATEN:
+                            m_Detail = new string[] { "SI", "NO" };
+                            break;
+                        case bo_FieldName.fn_MSS_ATAP:
+                            m_Detail = new string[] { "SI", "NO" };
+                            break;
+                        case bo_FieldName.fn_MSS_ACGT:
+                            m_Detail = new string[] { "NO", "SI" };
+                            break;
+                        case bo_FieldName.fn_MSS_ESTAC:
+                            m_Detail = new string[] { "Generado", "Entregado", "Aprobado", "Anulado" };
+                            break;
+                        case bo_FieldName.fn_MSS_ESTAD:
+                            m_Detail = new string[] { "Despachado", "Recibido", "Devuelto", "Anulado" };
+                            break;
+                    }
+                    break;
             }
+            return m_Detail;
+            /*}
             catch (Exception ex)
             {
                 throw ex;
-            }
+            }*/
         }
         private string[] getFindColumns(bo_TableName m_bo_TableName)
         {
             string[] m_Detail = null;
 
-            try
+            //try
+            // {
+            switch (m_bo_TableName)
             {
-                switch (m_bo_TableName)
-                {
-                    case bo_TableName.tn_MSS_CGPT:
-                        m_Detail = new string[] { "U_MSS_ESTA","U_MSS_FECD",
-                                                  "U_MSS_FECR", 
+                case bo_TableName.tn_MSS_CGPT:
+                    m_Detail = new string[] { "U_MSS_ESTA","U_MSS_FECD",
+                                                  "U_MSS_FECR",
                                                   "U_MSS_RUCT","U_MSS_NOMT","U_MSS_NOCH","U_MSS_NULI",
                                                   "U_MSS_NUPL","U_MSS_VOLV","U_MSS_VOLM"};
-                        break;
-                    case bo_TableName.tn_MSS_MTRA:
-                        m_Detail = new string[] { "U_MSS_RUET", "U_MSS_NOET", "U_MSS_NOCH", 
+                    break;
+                case bo_TableName.tn_MSS_MTRA:
+                    m_Detail = new string[] { "U_MSS_RUET", "U_MSS_NOET", "U_MSS_NOCH",
                                                   "U_MSS_NULI" };
-                        break;
-                    case bo_TableName.tn_MSS_MVEH:
-                        m_Detail = new string[] { "U_MSS_RUAT", "U_MSS_NOAT", "U_MSS_NUPL", 
-                                                  "U_MSS_VOLU", "U_MSS_MARC", "U_MSS_MODE", "U_MSS_YEAR", 
+                    break;
+                case bo_TableName.tn_MSS_MVEH:
+                    m_Detail = new string[] { "U_MSS_RUAT", "U_MSS_NOAT", "U_MSS_NUPL",
+                                                  "U_MSS_VOLU", "U_MSS_MARC", "U_MSS_MODE", "U_MSS_YEAR",
                                                   "U_MSS_ACTF"};
-                        break;
-                    case bo_TableName.tn_MSS_MAUT:
-                        m_Detail = new string[] { "U_MSS_CUSR", "U_MSS_NUSR", "U_MSS_ATCR", 
+                    break;
+                case bo_TableName.tn_MSS_MAUT:
+                    m_Detail = new string[] { "U_MSS_CUSR", "U_MSS_NUSR", "U_MSS_ATCR",
                                                   "U_MSS_ATAC", "U_MSS_ATAN", "U_MSS_ATEN", "U_MSS_ATAP"};
-                        break;
-                }
+                    break;
+            }
 
-                return m_Detail;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
+            return m_Detail;
+            //}
+            //catch (Exception ex)
+            //{
+            //    throw ex;
+            //}
         }
         private string[] getFormColumns(bo_TableName m_bo_TableName)
         {
             string[] m_Detail = null;
 
-            try
+            //try
+            //{
+            switch (m_bo_TableName)
             {
-                switch (m_bo_TableName)
-                {
-                    case bo_TableName.tn_MSS_CGPT:
-                        m_Detail = new string[] {  "DocEntry","Series", "U_MSS_ESTA","U_MSS_FECD",
+                case bo_TableName.tn_MSS_CGPT:
+                    m_Detail = new string[] {  "DocEntry","Series", "U_MSS_ESTA","U_MSS_FECD",
                                                   "U_MSS_FECR", "U_MSS_PTOP","U_MSS_DIRP",
                                                   "U_MSS_RUCT","U_MSS_NOMT","U_MSS_NOCH","U_MSS_NULI",
                                                   "U_MSS_NUPL","U_MSS_VOLV","U_MSS_VOLM","U_MSS_VOLP",
                                                   "U_MSS_COSF","U_MSS_COSM","U_MSS_COSP"};
-                        break;
-                    case bo_TableName.tn_MSS_MTRA:
-                        m_Detail = new string[] { "Code", "Name", "U_MSS_RUET", "U_MSS_NOET", "U_MSS_NOCH", 
+                    break;
+                case bo_TableName.tn_MSS_MTRA:
+                    m_Detail = new string[] { "Code", "Name", "U_MSS_RUET", "U_MSS_NOET", "U_MSS_NOCH",
                                                   "U_MSS_NULI"};
-                        break;
-                    case bo_TableName.tn_MSS_MVEH:
-                        m_Detail = new string[] { "Code", "Name", "U_MSS_RUAT", "U_MSS_NOAT", "U_MSS_NUPL", 
-                                                  "U_MSS_VOLU", "U_MSS_MARC", "U_MSS_MODE", "U_MSS_YEAR", 
+                    break;
+                case bo_TableName.tn_MSS_MVEH:
+                    m_Detail = new string[] { "Code", "Name", "U_MSS_RUAT", "U_MSS_NOAT", "U_MSS_NUPL",
+                                                  "U_MSS_VOLU", "U_MSS_MARC", "U_MSS_MODE", "U_MSS_YEAR",
                                                   "U_MSS_ACTF"};
-                        break;
-                    case bo_TableName.tn_MSS_MAUT:
-                        m_Detail = new string[] { "Code", "Name", "U_MSS_CUSR", "U_MSS_NUSR", "U_MSS_ATCR", 
+                    break;
+                case bo_TableName.tn_MSS_MAUT:
+                    m_Detail = new string[] { "Code", "Name", "U_MSS_CUSR", "U_MSS_NUSR", "U_MSS_ATCR",
                                                   "U_MSS_ATAC", "U_MSS_ATAN", "U_MSS_ATEN", "U_MSS_ATAP"};
-                        break;
-                }
+                    break;
+            }
 
-                return m_Detail;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
+            return m_Detail;
+            //}
+            //catch (Exception ex)
+            //{
+            //    throw ex;
+            //}
         }
         private string[] getChildFormColumns(bo_TableName m_bo_TableName)
         {
             string[] m_Detail = null;
 
-            try
+            //try
+            //{
+            switch (m_bo_TableName)
             {
-                switch (m_bo_TableName)
-                {
-                    case bo_TableName.tn_MSS_CGPT:
-                        m_Detail = new string[] {"U_MSS_SEGR", "U_MSS_COGR", "U_MSS_NOMC","U_MSS_PTOD",
+                case bo_TableName.tn_MSS_CGPT:
+                    m_Detail = new string[] {"U_MSS_SEGR", "U_MSS_COGR", "U_MSS_NOMC","U_MSS_PTOD",
                             "U_MSS_SEFV", "U_MSS_COFV", "U_MSS_VALV", "U_MSS_ITEM", "U_MSS_VOLM", "U_MSS_NUOC", "U_MSS_ESTA", "U_MSS_FEGR", "U_MSS_ENGR" };
 
-                        break;
-                }
-
-                return m_Detail;
+                    break;
             }
+
+            return m_Detail;
+            /*}
             catch (Exception ex)
             {
                 throw ex;
-            }
+            }*/
         }
 
         #endregion

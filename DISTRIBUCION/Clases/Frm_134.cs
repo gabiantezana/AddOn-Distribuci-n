@@ -14,7 +14,6 @@ namespace MSS.Clases
 
         #region _Events_
         public Frm_134()
-           
         {
             try { }
             catch { }
