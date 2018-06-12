@@ -139,7 +139,7 @@ namespace MSS.Comunes
             switch (bo_ServerTypes)
             {
                 case SAPbobsCOM.BoDataServerTypes.dst_HANADB:
-                    m_sSQL.AppendFormat("SELECT \"U_MSS_NOCH\" \"Value\", \"U_MSS_NOCH\" \"Name\"  FROM \"@MSS_MTRA\" WHERE \"U_MSS_RUET\" =\"{0}\"", RUC);
+                    m_sSQL.AppendFormat("SELECT \"U_MSS_NOCH\" \"Value\", \"U_MSS_NOCH\" \"Name\"  FROM \"@MSS_MTRA\" WHERE \"U_MSS_RUET\" ='{0}'", RUC);
                     break;
 
                 default:
@@ -157,7 +157,7 @@ namespace MSS.Comunes
             switch (bo_ServerTypes)
             {
                 case SAPbobsCOM.BoDataServerTypes.dst_HANADB:
-                    m_sSQL.AppendFormat("SELECT \"U_MSS_NUPL\" \"Value\", \"U_MSS_MARC\" || \" \"+\"U_MSS_MODE\" \"Name\"  FROM \"@MSS_MVEH\" WHERE \"U_MSS_RUAT\" =\"{0}\"", RUC);
+                    m_sSQL.AppendFormat("SELECT \"U_MSS_NUPL\" \"Value\", \"U_MSS_MARC\" || ' ' || \"U_MSS_MODE\" \"Name\"  FROM \"@MSS_MVEH\" WHERE \"U_MSS_RUAT\" ='{0}'", RUC);
                     break;
 
                 default:
@@ -175,7 +175,7 @@ namespace MSS.Comunes
             switch (bo_ServerTypes)
             {
                 case SAPbobsCOM.BoDataServerTypes.dst_HANADB:
-                    m_sSQL.AppendFormat("SELECT \"Series\" \"Value\", \"SeriesName\" \"Name\"  FROM \"NNM1\" WHERE \"Locked\" =\"N\"");
+                    m_sSQL.AppendFormat("SELECT \"Series\" \"Value\", \"SeriesName\" \"Name\"  FROM \"NNM1\" WHERE \"Locked\" ='N'");
                     break;
 
                 default:
@@ -194,7 +194,7 @@ namespace MSS.Comunes
             switch (bo_ServerTypes)
             {
                 case SAPbobsCOM.BoDataServerTypes.dst_HANADB:
-                    m_sSQL.AppendFormat("SELECT \"DocEntry\" \"Val\" from \"ODLN\" WHERE \"FolioPref\" = \"{0}\" and \"FolioNum\" = \"{1}\";", serie, corr);
+                    m_sSQL.AppendFormat("SELECT \"DocEntry\" \"Val\" from \"ODLN\" WHERE \"FolioPref\" = \"{0}\" and \"FolioNum\" = '{1}';", serie, corr);
                     break;
 
                 default:
@@ -231,7 +231,7 @@ namespace MSS.Comunes
             switch (bo_ServerTypes)
             {
                 case SAPbobsCOM.BoDataServerTypes.dst_HANADB:
-                    m_sSQL.AppendFormat("SELECT \"U_MSS_NULI\" \"Val\" FROM \"@MSS_MTRA\" WHERE TRIM(\"U_MSS_RUET\")=\"{0}\" AND TRIM(\"U_MSS_NOCH\")=\"{1}\";", ruc, chofer);
+                    m_sSQL.AppendFormat("SELECT \"U_MSS_NULI\" \"Val\" FROM \"@MSS_MTRA\" WHERE TRIM(\"U_MSS_RUET\")='{0}' AND TRIM(\"U_MSS_NOCH\")='{1}';", ruc, chofer);
                     break;
 
                 default:
@@ -249,7 +249,7 @@ namespace MSS.Comunes
             switch (bo_ServerTypes)
             {
                 case SAPbobsCOM.BoDataServerTypes.dst_HANADB:
-                    m_sSQL.AppendFormat("SELECT \"NextNumber\" \"Val\" FROM \"NNM1\" WHERE \"Series\"=\"{0}\";", serie);
+                    m_sSQL.AppendFormat("SELECT \"NextNumber\" \"Val\" FROM \"NNM1\" WHERE \"Series\"='{0}';", serie);
                     break;
 
                 default:
@@ -266,7 +266,7 @@ namespace MSS.Comunes
             switch (bo_ServerTypes)
             {
                 case SAPbobsCOM.BoDataServerTypes.dst_HANADB:
-                    m_sSQL.AppendFormat("SELECT \"U_MSS_VOLU\" \"Val\" FROM \"@MSS_MVEH\" WHERE \"U_MSS_NUPL\"=\"{0}\";", placa);
+                    m_sSQL.AppendFormat("SELECT \"U_MSS_VOLU\" \"Val\" FROM \"@MSS_MVEH\" WHERE \"U_MSS_NUPL\"='{0}';", placa);
                     break;
 
                 default:
